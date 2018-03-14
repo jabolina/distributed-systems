@@ -7,10 +7,9 @@ dotenv.load()
 
 
 class Server:
-    def __init__(self, host, open_port=8000, response_port=8002):
+    def __init__(self, host, open_port=8000):
         self.host = host
         self.port = open_port
-        self.response_port = response_port
         self.socket = self.create_socket()
         self.queue = []
         self.available_keys = []
@@ -44,7 +43,7 @@ class Server:
                         self.hash_crud[key] = data.replace(data.split()[0], '')
                         send_bytes = 'Inserted (key=' + str(key) + ', value=' + data.replace(data.split()[0], '') + ')'
                         send_bytes = send_bytes.encode('utf-8')
-                        self.socket.sendto(send_bytes, (self.host, self.response_port))
+                        self.socket.sendto(send_bytes, (self.host, addr[1]))
 
                 elif data.split()[0] == 'UPDATE':
                     key = data.split()[1]
@@ -55,7 +54,7 @@ class Server:
                         send_bytes = 'Key not found for update.'
 
                     send_bytes = send_bytes.encode('utf-8')
-                    self.socket.sendto(send_bytes, (self.host, self.response_port))
+                    self.socket.sendto(send_bytes, (self.host, addr[1]))
 
                 elif data.split()[0] == 'DELETE':
                     key = data.split()[1]
@@ -67,7 +66,7 @@ class Server:
                         send_bytes = 'Key not found for delete.'
 
                     send_bytes = send_bytes.encode('utf-8')
-                    self.socket.sendto(send_bytes, (self.host, self.response_port))
+                    self.socket.sendto(send_bytes, (self.host, addr[1]))
 
                 elif data.split()[0] == 'READ':
                     key = data.split()[1]
@@ -78,12 +77,12 @@ class Server:
                         send_bytes = 'Key not found for read.'
 
                     send_bytes = send_bytes.encode('utf-8')
-                    self.socket.sendto(send_bytes, (self.host, self.response_port))
+                    self.socket.sendto(send_bytes, (self.host, addr[1]))
 
                 else:
                     send_bytes = 'Command not found.'
                     send_bytes = send_bytes.encode('utf-8')
-                    self.socket.sendto(send_bytes, (self.host, self.response_port))
+                    self.socket.sendto(send_bytes, (self.host, addr[1]))
 
     def run(self):
         unqueue_thread = threading.Thread(name='unqueue_commands', target=self.unqueue_commands)
