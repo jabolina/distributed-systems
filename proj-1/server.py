@@ -1,6 +1,7 @@
 import socket
 import threading
 import dotenv
+import re
 import os
 
 dotenv.load()
@@ -84,7 +85,29 @@ class Server:
                     send_bytes = send_bytes.encode('utf-8')
                     self.socket.sendto(send_bytes, (self.host, addr[1]))
 
+                self.backup_hash()
+
+    def backup_hash(self):
+        log = open('log_hash.log', 'w')
+        for key in self.hash_crud:
+            self.hash_crud[key] = re.sub('\n$', '', self.hash_crud[key])
+            log.write(str(key) + '&#!#&' + str(self.hash_crud[key]) + '\n')
+        log.close()
+
+    def reload_hash(self):
+        try:
+            with open('log_hash.log', 'r') as file:
+                for line in file:
+                    self.hash_crud[int(line.split('&#!#&')[0])] = line.split('&#!#&')[1]
+
+            file.close()
+
+        except Exception:
+            pass
+
     def run(self):
+        self.reload_hash()
+
         unqueue_thread = threading.Thread(name='unqueue_commands', target=self.unqueue_commands)
         unqueue_thread.start()
 
