@@ -7,16 +7,15 @@ dotenv.load()
 
 
 class Client:
-    def __init__(self, host, open_port=8001, listen_to_port=8000):
+    def __init__(self, host, connect_to_port=8000):
         self.host = host
-        self.port = open_port
-        self.target = listen_to_port
+        self.port = connect_to_port
         self.socket = self.create_socket()
         self.show_cli = True
 
-    def create_socket(self):
+    @staticmethod
+    def create_socket():
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.bind((self.host, self.port))
 
         return sock
 
@@ -26,7 +25,7 @@ class Client:
                 command = input('\n$ ')
                 command = command.encode('utf-8')
                 self.show_cli = False
-                self.socket.sendto(command, (self.host, self.target))
+                self.socket.sendto(command, (self.host, self.port))
                 print('--------------------------------------------------------------->')
 
     def receive_result(self):
