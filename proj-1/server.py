@@ -119,7 +119,7 @@ class Server:
 
 def inside_bytes_length(number):
     bytes_length = 0
-    while number > 0 and bytes_length < 21:
+    while number > 0 and bytes_length <= 22:
         number = int(number / 256)
         bytes_length += 1
 
