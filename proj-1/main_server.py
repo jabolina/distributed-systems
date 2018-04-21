@@ -6,6 +6,6 @@ dotenv.load()
 
 
 if __name__ == '__main__':
-    srvr = server.Server(os.getenv("HOST"), int(os.getenv('SERVER_PORT')))
+    srvr = server.Server(os.getenv('HOST'), int(os.getenv('SERVER_PORT')))
     receive, unqueue = srvr.run()
 
