@@ -1,5 +1,5 @@
 import os
-import client_command as client
+import client as client
 import dotenv
 
 dotenv.load()

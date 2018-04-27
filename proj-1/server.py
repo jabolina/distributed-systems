@@ -51,10 +51,16 @@ class Server:
                     if len(self.available_keys) > 0:
                         key = self.available_keys.pop()
                     else:
-                        key = len(self.hash_crud)
+                        try:
+                            key = int(data.split()[1])
+                            insert_data = data.split()[2:]
+                        except Exception:
+                            key = len(self.hash_crud)
+                            insert_data = data.split()[1:]
 
-                    self.hash_crud[key] = data.replace(data.split()[0], '')
-                    send_bytes = 'Inserted (key=' + str(key) + ', value=' + data.replace(data.split()[0], '') + ')'
+                    insert_data = ' '.join(insert_data)
+                    self.hash_crud[key] = insert_data
+                    send_bytes = 'Inserted (key=' + str(key) + ', value=' + insert_data + ')'
                     send_bytes = send_bytes.encode('utf-8')
                     self.socket.sendto(send_bytes, (self.host, addr[1]))
 
