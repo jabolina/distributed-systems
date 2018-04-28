@@ -1,0 +1,15 @@
+syntax = "proto3";
+package configuration;
+
+service ServerGRPC {
+    rpc listen_key (stream listenKeyRequest) returns (stream listenKeyReply) {}
+}
+
+message listenKeyRequest {
+    string command = 1;
+}
+
+message listenKeyReply {
+    string message = 1;
+}
+
