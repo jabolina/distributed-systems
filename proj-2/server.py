@@ -75,26 +75,28 @@ class Server:
             data, addr = self.process.get()
             data = data.decode('utf-8')
             verify_keys = {'verify': False}
+            send_bytes = ''
 
             if data.split()[0] == 'INSERT':
                 if inside_bytes_length(len(self.hash_crud)):
+                    try:
+                        key = int(data.split()[1])
+                        insert_data = data.split()[2:]
+                        verify_keys['verify'] = True
+                        verify_keys['key'] = key
+                        verify_keys['command'] = data.split()[0]
+                    except Exception:
+                        key = len(self.hash_crud)
+                        insert_data = data.split()[1:]
+
+                    if key in self.available_keys:
+                        self.available_keys.remove(key)
                     if len(self.available_keys) > 0:
                         key = self.available_keys.pop()
-                    else:
-                        try:
-                            key = int(data.split()[1])
-                            insert_data = data.split()[2:]
-                            verify_keys['verify'] = True
-                            verify_keys['key'] = key
-                            verify_keys['command'] = data.split()[0]
-                        except Exception:
-                            key = len(self.hash_crud)
-                            insert_data = data.split()[1:]
 
                     insert_data = ' '.join(insert_data)
                     self.hash_crud[key] = insert_data
-                    self.socket_send_message('Inserted (key=' + str(key) + ', value=' + insert_data + ')',
-                                             (self.host, addr[1]))
+                    send_bytes = 'Inserted (key=' + str(key) + ', value=' + insert_data + ')'
 
             elif data.split()[0] == 'UPDATE':
                 key = data.split()[1]
@@ -109,8 +111,6 @@ class Server:
                 else:
                     send_bytes = 'Key not found for update.'
 
-                self.socket_send_message(send_bytes, (self.host, addr[1]))
-
             elif data.split()[0] == 'DELETE':
                 key = data.split()[1]
                 if int(key) in self.hash_crud:
@@ -123,8 +123,6 @@ class Server:
                 else:
                     send_bytes = 'Key not found for delete.'
 
-                self.socket_send_message(send_bytes, (self.host, addr[1]))
-
             elif data.split()[0] == 'READ':
                 key = data.split()[1]
                 if int(key) in self.hash_crud:
@@ -136,8 +134,6 @@ class Server:
                 else:
                     send_bytes = 'Key not found for read.'
 
-                self.socket_send_message(send_bytes, (self.host, addr[1]))
-
             elif data.split()[0] == 'LISTEN':
                 key = int(data.split()[1])
                 if int(key) not in self.listen_keys.keys():
@@ -146,11 +142,12 @@ class Server:
                 self.listen_keys[key].append(addr)
 
             else:
-                self.socket_send_message('Command not found.', (self.host, addr[1]))
+                send_bytes = 'Command not found.'
 
             if verify_keys['verify']:
                 self.command_in_key(verify_keys)
 
+            self.socket_send_message(send_bytes, (self.host, addr[1]))
             self.backup_hash()
 
     def socket_send_message(self, message, addr):
@@ -161,7 +158,8 @@ class Server:
         for key in self.listen_keys:
             if int(info['key']) == key:
                 for addr in self.listen_keys[key]:
-                    self.socket_send_message(str(key) + ' ' + info['command'], addr)
+                    print('uai')
+                    self.gRPC_server.changed_key(str(key) + ' ' + info['command'])
 
     def log_command(self):
         if not self.log.empty():
