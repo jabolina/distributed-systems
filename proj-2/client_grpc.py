@@ -29,4 +29,3 @@ class ClientGRPC:
                     print(response.message)
             except grpc._channel._Rendezvous as err:
                 print(err)
-

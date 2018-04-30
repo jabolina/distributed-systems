@@ -4,6 +4,7 @@ import dotenv
 import re
 import os
 import queue
+import time
 
 import server_grpc
 
@@ -52,23 +53,29 @@ class Server:
         return sock
 
     def receive_and_enqueue(self):
-        while True:
-            data, addr = self.socket.recvfrom(int(os.getenv('BUFFER_SIZE')))
-            print('Received command from' + str(addr) + '\tInfo: ' + str(data))
-            self.queue.put((data, addr))
+        try:
+            while True:
+                data, addr = self.socket.recvfrom(int(os.getenv('BUFFER_SIZE')))
+                print('Received command from' + str(addr) + '\tInfo: ' + str(data))
+                self.queue.put((data, addr))
+        except KeyboardInterrupt:
+            exit(0)
 
     def unqueue_commands(self):
-        while True:
-            if not self.queue.empty():
-                data, addr = self.queue.get()
-                self.process.put((data, addr))
-                self.log.put((data, addr))
+        try:
+            while True:
+                if not self.queue.empty():
+                    data, addr = self.queue.get()
+                    self.process.put((data, addr))
+                    self.log.put((data, addr))
 
-                self.process_commands()
-                self.log_command()
+                    self.process_commands()
+                    self.log_command()
+        except KeyboardInterrupt:
+            exit(0)
 
     def grpc_server(self):
-        self.gRPC_server.start_server()
+        self.gRPC_server.run()
 
     def process_commands(self):
         if not self.process.empty():
@@ -135,17 +142,20 @@ class Server:
                     send_bytes = 'Key not found for read.'
 
             elif data.split()[0] == 'LISTEN':
-                key = int(data.split()[1])
-                if int(key) not in self.listen_keys.keys():
-                    self.listen_keys[key] = []
+                key = data.split()[1]
+                if int(key) in self.hash_crud:
+                    if int(key) not in self.listen_keys.keys():
+                        self.listen_keys[key] = []
 
-                self.listen_keys[key].append(addr)
+                    self.listen_keys[key].append(addr)
+                else:
+                    send_bytes = 'Key not found for read.'
 
             else:
                 send_bytes = 'Command not found.'
 
             if verify_keys['verify']:
-                self.command_in_key(verify_keys)
+                send_bytes = self.command_in_key(verify_keys, send_bytes)
 
             self.socket_send_message(send_bytes, (self.host, addr[1]))
             self.backup_hash()
@@ -154,12 +164,13 @@ class Server:
         message = message.encode('utf-8')
         self.socket.sendto(message, addr)
 
-    def command_in_key(self, info):
+    def command_in_key(self, info, send_bytes):
         for key in self.listen_keys:
-            if int(info['key']) == key:
+            if int(info['key']) == int(key):
                 for addr in self.listen_keys[key]:
-                    print('uai')
-                    self.gRPC_server.changed_key(str(key) + ' ' + info['command'])
+                    send_bytes += '\n(key=' + key + '\tcommand=' + info['command'] + ')'
+
+        return send_bytes
 
     def log_command(self):
         if not self.log.empty():
@@ -187,19 +198,22 @@ class Server:
             pass
 
     def run(self):
-        self.reload_hash()
-        self.gRPC_server.create_grpc_server()
+        try:
+            self.reload_hash()
+            self.gRPC_server.create_grpc_server()
 
-        unqueue_thread = threading.Thread(name='unqueue_commands', target=self.unqueue_commands)
-        unqueue_thread.start()
+            unqueue_thread = threading.Thread(name='unqueue_commands', target=self.unqueue_commands)
+            unqueue_thread.start()
 
-        receive_thread = threading.Thread(name='receive_and_enqueue', target=self.receive_and_enqueue)
-        receive_thread.start()
+            receive_thread = threading.Thread(name='receive_and_enqueue', target=self.receive_and_enqueue)
+            receive_thread.start()
 
-        grpc_server = threading.Thread(name='grpc_server', target=self.grpc_server)
-        grpc_server.start()
+            grpc_server = threading.Thread(name='grpc_server', target=self.grpc_server)
+            grpc_server.start()
 
-        return receive_thread, unqueue_thread, grpc_server
+            return receive_thread, unqueue_thread, grpc_server
+        except KeyboardInterrupt:
+            exit(0)
 
 
 def inside_bytes_length(number):

@@ -36,10 +36,13 @@ class Client:
             self.show_cli = True
 
     def run(self):
-        command_thread = threading.Thread(name='send_commands', target=self.send_command)
-        command_thread.start()
+        try:
+            command_thread = threading.Thread(name='send_commands', target=self.send_command)
+            command_thread.start()
 
-        listen_thread = threading.Thread(name='receive_results', target=self.receive_result)
-        listen_thread.start()
+            listen_thread = threading.Thread(name='receive_results', target=self.receive_result)
+            listen_thread.start()
 
-        return command_thread, listen_thread
+            return command_thread, listen_thread
+        except KeyboardInterrupt:
+            exit(0)
