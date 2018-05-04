@@ -3,6 +3,7 @@ import socket
 import dotenv
 import os
 import threading
+from multiprocessing.pool import ThreadPool
 
 import grpc
 import time
@@ -24,6 +25,7 @@ class ServerGRPC(configuration_pb2_grpc.ServerGRPCServicer):
         self.sock_host = os.getenv('HOST')
         self.server = None
         self.port = int(os.getenv('GRPC_PORT'))
+        self.queues = dict()
 
     def create_grpc_server(self):
         self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=int(os.getenv('MAX_WORKERS'))))
@@ -47,14 +49,20 @@ class ServerGRPC(configuration_pb2_grpc.ServerGRPCServicer):
         else:
             print('Server gRPC was not created to start.')
 
-    def send_message_socket(self, message):
+    def send_message_socket(self, message, client_socket):
         message = message.encode('utf-8')
-        self.sock.sendto(message, (self.sock_host, self.sock_port))
+        client_socket.sendto(message, (self.sock_host, self.sock_port))
 
-    def receive_message_socket(self):
+    def receive_message_socket(self, client_socket, pid):
         while True:
-            data, addr = self.sock.recvfrom(int(os.getenv('BUFFER_SIZE')))
-            return data.decode('utf-8')
+            print('receive')
+            data, addr = client_socket.recvfrom(int(os.getenv('BUFFER_SIZE')))
+            self.queues[pid]['response'].put(data.decode('utf-8'))
+
+    def keep_stream_alive(self, pid):
+        while True:
+            if not self.queues[pid]['commands'].empty():
+                self.send_message_socket(self.queues[pid]['commands'].get(), self.queues[pid]['sock'])
 
     def run(self):
         try:
@@ -63,12 +71,29 @@ class ServerGRPC(configuration_pb2_grpc.ServerGRPCServicer):
         except KeyboardInterrupt:
             exit(0)
 
-    def listen_key(self, request, context):
+    def verify_queue(self, command, context):
+        print('Verifying queue for pid ' + str(command.pid))
+        while not self.queues[command.pid]['response'].empty():
+            yield configuration_pb2.listenKeyReply(message=self.queues[command.pid]['response'].get())
+
+    def listen_key(self, command, context):
         metadata = dict(context.invocation_metadata())
         print('gRPC--->\t' + str(metadata))
 
-        commands = request
-        for command in commands:
-            self.send_message_socket(command.command)
-            return_data = self.receive_message_socket()
-            yield configuration_pb2.listenKeyReply(message=return_data)
+        if command.pid in self.queues.keys():
+            self.queues[command.pid]['commands'].put(command.command)
+        elif command.pid not in self.queues.keys():
+            self.queues[command.pid] = {'commands': queue.Queue(),
+                                        'sock': self.create_socket(),
+                                        'response': queue.Queue(),
+                                        'grpc': configuration_pb2.listenKeyReply}
+            commands_object = self.queues[command.pid]
+            commands_object['commands'].put(command.command)
+
+            receive = threading.Thread(target=self.receive_message_socket, args=(commands_object['sock'], command.pid))
+            receive.start()
+
+            stream = threading.Thread(target=self.keep_stream_alive, args=(command.pid,))
+            stream.start()
+
+        yield self.queues[command.pid]['grpc'](message='')

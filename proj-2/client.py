@@ -11,7 +11,6 @@ class Client:
         self.host = host
         self.port = connect_to_port
         self.socket = self.create_socket()
-        self.show_cli = True
 
     @staticmethod
     def create_socket():
@@ -20,20 +19,16 @@ class Client:
         return sock
 
     def send_command(self):
+        print('Client initialized.')
         while True:
-            if self.show_cli:
-                command = input('\n$ ')
-                command = command.encode('utf-8')
-                self.show_cli = False
-                self.socket.sendto(command, (self.host, self.port))
-                print('--------------------------------------------------------------->')
+            command = input('')
+            command = command.encode('utf-8')
+            self.socket.sendto(command, (self.host, self.port))
 
     def receive_result(self):
         while True:
             data, addr = self.socket.recvfrom(int(os.getenv('BUFFER_SIZE')))
-            print('Receive response: ' + data.decode('utf-8') + ' from ' + str(addr))
-            print('<---------------------------------------------------------------')
-            self.show_cli = True
+            print(data.decode('utf-8'))
 
     def run(self):
         try:

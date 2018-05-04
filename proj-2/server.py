@@ -56,7 +56,7 @@ class Server:
         try:
             while True:
                 data, addr = self.socket.recvfrom(int(os.getenv('BUFFER_SIZE')))
-                print('Received command from' + str(addr) + '\tInfo: ' + str(data))
+                print('Received message: ' + data.decode('utf-8') + '\tfrom: ' + str(addr))
                 self.queue.put((data, addr))
         except KeyboardInterrupt:
             exit(0)
@@ -144,33 +144,39 @@ class Server:
             elif data.split()[0] == 'LISTEN':
                 key = data.split()[1]
                 if int(key) in self.hash_crud:
-                    if int(key) not in self.listen_keys.keys():
+                    if key not in self.listen_keys.keys():
                         self.listen_keys[key] = []
 
                     self.listen_keys[key].append(addr)
+                    verify_keys['verify'] = True
+                    verify_keys['key'] = key
+                    verify_keys['command'] = data.split()[0]
                 else:
                     send_bytes = 'Key not found for read.'
 
             else:
                 send_bytes = 'Command not found.'
 
-            if verify_keys['verify']:
-                send_bytes = self.command_in_key(verify_keys, send_bytes)
-
             self.socket_send_message(send_bytes, (self.host, addr[1]))
+
+            if verify_keys['verify']:
+                self.command_in_key(verify_keys, addr)
+
             self.backup_hash()
 
     def socket_send_message(self, message, addr):
+        print('Sending message: ' + message + '\tto: ' + str(addr))
+        message = '\t\t' + message
+        message += '\n\n'
         message = message.encode('utf-8')
         self.socket.sendto(message, addr)
 
-    def command_in_key(self, info, send_bytes):
+    def command_in_key(self, info, who_sent_addr):
         for key in self.listen_keys:
             if int(info['key']) == int(key):
                 for addr in self.listen_keys[key]:
-                    send_bytes += '\n(key=' + key + '\tcommand=' + info['command'] + ')'
-
-        return send_bytes
+                    if addr != who_sent_addr:
+                        self.socket_send_message('(key=' + key + '\tcommand=' + info['command'] + ')', addr)
 
     def log_command(self):
         if not self.log.empty():

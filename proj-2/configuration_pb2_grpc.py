@@ -14,9 +14,14 @@ class ServerGRPCStub(object):
     Args:
       channel: A grpc.Channel.
     """
-    self.listen_key = channel.stream_stream(
+    self.listen_key = channel.unary_stream(
         '/configuration.ServerGRPC/listen_key',
         request_serializer=configuration__pb2.listenKeyRequest.SerializeToString,
+        response_deserializer=configuration__pb2.listenKeyReply.FromString,
+        )
+    self.verify_queue = channel.unary_stream(
+        '/configuration.ServerGRPC/verify_queue',
+        request_serializer=configuration__pb2.verifyQueueRequest.SerializeToString,
         response_deserializer=configuration__pb2.listenKeyReply.FromString,
         )
 
@@ -25,7 +30,14 @@ class ServerGRPCServicer(object):
   # missing associated documentation comment in .proto file
   pass
 
-  def listen_key(self, request_iterator, context):
+  def listen_key(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def verify_queue(self, request, context):
     # missing associated documentation comment in .proto file
     pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -35,9 +47,14 @@ class ServerGRPCServicer(object):
 
 def add_ServerGRPCServicer_to_server(servicer, server):
   rpc_method_handlers = {
-      'listen_key': grpc.stream_stream_rpc_method_handler(
+      'listen_key': grpc.unary_stream_rpc_method_handler(
           servicer.listen_key,
           request_deserializer=configuration__pb2.listenKeyRequest.FromString,
+          response_serializer=configuration__pb2.listenKeyReply.SerializeToString,
+      ),
+      'verify_queue': grpc.unary_stream_rpc_method_handler(
+          servicer.verify_queue,
+          request_deserializer=configuration__pb2.verifyQueueRequest.FromString,
           response_serializer=configuration__pb2.listenKeyReply.SerializeToString,
       ),
   }

@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='configuration.proto',
   package='configuration',
   syntax='proto3',
-  serialized_pb=_b('\n\x13\x63onfiguration.proto\x12\rconfiguration\"#\n\x10listenKeyRequest\x12\x0f\n\x07\x63ommand\x18\x01 \x01(\t\"!\n\x0elistenKeyReply\x12\x0f\n\x07message\x18\x01 \x01(\t2`\n\nServerGRPC\x12R\n\nlisten_key\x12\x1f.configuration.listenKeyRequest\x1a\x1d.configuration.listenKeyReply\"\x00(\x01\x30\x01\x62\x06proto3')
+  serialized_pb=_b('\n\x13\x63onfiguration.proto\x12\rconfiguration\"0\n\x10listenKeyRequest\x12\x0f\n\x07\x63ommand\x18\x01 \x01(\t\x12\x0b\n\x03pid\x18\x02 \x01(\r\"!\n\x0elistenKeyReply\x12\x0f\n\x07message\x18\x01 \x01(\t\"!\n\x12verifyQueueRequest\x12\x0b\n\x03pid\x18\x01 \x01(\r2\xb4\x01\n\nServerGRPC\x12P\n\nlisten_key\x12\x1f.configuration.listenKeyRequest\x1a\x1d.configuration.listenKeyReply\"\x00\x30\x01\x12T\n\x0cverify_queue\x12!.configuration.verifyQueueRequest\x1a\x1d.configuration.listenKeyReply\"\x00\x30\x01\x62\x06proto3')
 )
 
 
@@ -39,6 +39,13 @@ _LISTENKEYREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='pid', full_name='configuration.listenKeyRequest.pid', index=1,
+      number=2, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -52,7 +59,7 @@ _LISTENKEYREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=38,
-  serialized_end=73,
+  serialized_end=86,
 )
 
 
@@ -82,12 +89,44 @@ _LISTENKEYREPLY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=75,
-  serialized_end=108,
+  serialized_start=88,
+  serialized_end=121,
+)
+
+
+_VERIFYQUEUEREQUEST = _descriptor.Descriptor(
+  name='verifyQueueRequest',
+  full_name='configuration.verifyQueueRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='pid', full_name='configuration.verifyQueueRequest.pid', index=0,
+      number=1, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=123,
+  serialized_end=156,
 )
 
 DESCRIPTOR.message_types_by_name['listenKeyRequest'] = _LISTENKEYREQUEST
 DESCRIPTOR.message_types_by_name['listenKeyReply'] = _LISTENKEYREPLY
+DESCRIPTOR.message_types_by_name['verifyQueueRequest'] = _VERIFYQUEUEREQUEST
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 listenKeyRequest = _reflection.GeneratedProtocolMessageType('listenKeyRequest', (_message.Message,), dict(
@@ -104,6 +143,13 @@ listenKeyReply = _reflection.GeneratedProtocolMessageType('listenKeyReply', (_me
   ))
 _sym_db.RegisterMessage(listenKeyReply)
 
+verifyQueueRequest = _reflection.GeneratedProtocolMessageType('verifyQueueRequest', (_message.Message,), dict(
+  DESCRIPTOR = _VERIFYQUEUEREQUEST,
+  __module__ = 'configuration_pb2'
+  # @@protoc_insertion_point(class_scope:configuration.verifyQueueRequest)
+  ))
+_sym_db.RegisterMessage(verifyQueueRequest)
+
 
 
 _SERVERGRPC = _descriptor.ServiceDescriptor(
@@ -112,8 +158,8 @@ _SERVERGRPC = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=110,
-  serialized_end=206,
+  serialized_start=159,
+  serialized_end=339,
   methods=[
   _descriptor.MethodDescriptor(
     name='listen_key',
@@ -121,6 +167,15 @@ _SERVERGRPC = _descriptor.ServiceDescriptor(
     index=0,
     containing_service=None,
     input_type=_LISTENKEYREQUEST,
+    output_type=_LISTENKEYREPLY,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='verify_queue',
+    full_name='configuration.ServerGRPC.verify_queue',
+    index=1,
+    containing_service=None,
+    input_type=_VERIFYQUEUEREQUEST,
     output_type=_LISTENKEYREPLY,
     options=None,
   ),
