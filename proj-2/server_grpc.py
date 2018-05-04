@@ -55,7 +55,6 @@ class ServerGRPC(configuration_pb2_grpc.ServerGRPCServicer):
 
     def receive_message_socket(self, client_socket, pid):
         while True:
-            print('receive')
             data, addr = client_socket.recvfrom(int(os.getenv('BUFFER_SIZE')))
             self.queues[pid]['response'].put(data.decode('utf-8'))
 
