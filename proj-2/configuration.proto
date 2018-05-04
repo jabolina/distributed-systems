@@ -2,8 +2,8 @@ syntax = "proto3";
 package configuration;
 
 service ServerGRPC {
-    rpc listen_key (listenKeyRequest) returns (stream listenKeyReply) {}
-    rpc verify_queue(verifyQueueRequest) returns (stream listenKeyReply) {}
+    rpc listen_key (listenKeyRequest) returns (Empty) {}
+    rpc verify_queue(listenKeyRequest) returns (stream listenKeyReply) {}
 }
 
 message listenKeyRequest {
@@ -15,6 +15,4 @@ message listenKeyReply {
     string message = 1;
 }
 
-message verifyQueueRequest {
-    uint32 pid = 1;
-}
+message Empty {}

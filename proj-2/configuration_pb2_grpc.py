@@ -14,14 +14,14 @@ class ServerGRPCStub(object):
     Args:
       channel: A grpc.Channel.
     """
-    self.listen_key = channel.unary_stream(
+    self.listen_key = channel.unary_unary(
         '/configuration.ServerGRPC/listen_key',
         request_serializer=configuration__pb2.listenKeyRequest.SerializeToString,
-        response_deserializer=configuration__pb2.listenKeyReply.FromString,
+        response_deserializer=configuration__pb2.Empty.FromString,
         )
     self.verify_queue = channel.unary_stream(
         '/configuration.ServerGRPC/verify_queue',
-        request_serializer=configuration__pb2.verifyQueueRequest.SerializeToString,
+        request_serializer=configuration__pb2.listenKeyRequest.SerializeToString,
         response_deserializer=configuration__pb2.listenKeyReply.FromString,
         )
 
@@ -47,14 +47,14 @@ class ServerGRPCServicer(object):
 
 def add_ServerGRPCServicer_to_server(servicer, server):
   rpc_method_handlers = {
-      'listen_key': grpc.unary_stream_rpc_method_handler(
+      'listen_key': grpc.unary_unary_rpc_method_handler(
           servicer.listen_key,
           request_deserializer=configuration__pb2.listenKeyRequest.FromString,
-          response_serializer=configuration__pb2.listenKeyReply.SerializeToString,
+          response_serializer=configuration__pb2.Empty.SerializeToString,
       ),
       'verify_queue': grpc.unary_stream_rpc_method_handler(
           servicer.verify_queue,
-          request_deserializer=configuration__pb2.verifyQueueRequest.FromString,
+          request_deserializer=configuration__pb2.listenKeyRequest.FromString,
           response_serializer=configuration__pb2.listenKeyReply.SerializeToString,
       ),
   }

@@ -3,7 +3,6 @@ import socket
 import dotenv
 import os
 import threading
-from multiprocessing.pool import ThreadPool
 
 import grpc
 import time
@@ -71,9 +70,9 @@ class ServerGRPC(configuration_pb2_grpc.ServerGRPCServicer):
             exit(0)
 
     def verify_queue(self, command, context):
-        print('Verifying queue for pid ' + str(command.pid))
-        while not self.queues[command.pid]['response'].empty():
-            yield configuration_pb2.listenKeyReply(message=self.queues[command.pid]['response'].get())
+        while True:
+            while not self.queues[command.pid]['response'].empty():
+                yield configuration_pb2.listenKeyReply(message=self.queues[command.pid]['response'].get())
 
     def listen_key(self, command, context):
         metadata = dict(context.invocation_metadata())
@@ -95,4 +94,4 @@ class ServerGRPC(configuration_pb2_grpc.ServerGRPCServicer):
             stream = threading.Thread(target=self.keep_stream_alive, args=(command.pid,))
             stream.start()
 
-        yield self.queues[command.pid]['grpc'](message='')
+        return self.queues[command.pid]['grpc']()

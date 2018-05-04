@@ -22,8 +22,9 @@ class ClientGRPC:
         return configuration_pb2.listenKeyRequest(command=input(''), pid=os.getpid())
 
     def verify_queue_interval(self, interval=1):
+        responses = self.stub.verify_queue(configuration_pb2.listenKeyRequest(command='', pid=os.getpid()))
+
         while True:
-            responses = self.stub.verify_queue(configuration_pb2.verifyQueueRequest(pid=os.getpid()))
             try:
                 if responses is not None:
                     for response in responses:
@@ -32,20 +33,14 @@ class ClientGRPC:
                 print(err)
                 exit(0)
 
-            time.sleep(interval)
+            # time.sleep(interval)
 
     def send_message(self):
         print('Client initialized.')
         while True:
-            responses = self.stub.listen_key(self.generate_command())
-            try:
-                if responses is not None:
-                    for response in responses:
-                        print(response.message)
-                if self.need_verify and self.create_verify:
-                    self.create_verify = False
-                    verify_queue = threading.Thread(target=self.verify_queue_interval,
-                                                    args=(float(os.getenv('GRPC_LISTEN_INTERVAL')),))
-                    verify_queue.start()
-            except grpc._channel._Rendezvous as err:
-                print(err)
+            response = self.stub.listen_key(self.generate_command())
+            if self.need_verify and self.create_verify:
+                self.create_verify = False
+                verify_queue = threading.Thread(target=self.verify_queue_interval,
+                                                args=(float(os.getenv('GRPC_LISTEN_INTERVAL')),))
+                verify_queue.start()
