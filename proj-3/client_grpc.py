@@ -1,11 +1,12 @@
 from __future__ import print_function
-import dotenv
+
 import os
-import grpc
-import time
+import threading
+
 import configuration_pb2
 import configuration_pb2_grpc
-import threading
+import dotenv
+import grpc
 
 dotenv.load()
 
@@ -21,7 +22,7 @@ class ClientGRPC:
         self.need_verify = True
         return configuration_pb2.listenKeyRequest(command=input(''), pid=os.getpid())
 
-    def verify_queue_interval(self, interval=1):
+    def verify_queue_interval(self):
         responses = self.stub.verify_queue(configuration_pb2.listenKeyRequest(command='', pid=os.getpid()))
 
         while True:
@@ -39,6 +40,5 @@ class ClientGRPC:
             response = self.stub.listen_key(self.generate_command())
             if self.need_verify and self.create_verify:
                 self.create_verify = False
-                verify_queue = threading.Thread(target=self.verify_queue_interval,
-                                                args=(float(os.getenv('GRPC_LISTEN_INTERVAL')),))
+                verify_queue = threading.Thread(target=self.verify_queue_interval)
                 verify_queue.start()
