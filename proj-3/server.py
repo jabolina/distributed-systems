@@ -185,19 +185,31 @@ class Server:
 
     def backup_hash(self):
         while True:
+            snapshooter.move_snaps()
+            snapshooter.create_snap('./listen_', time.time(), self.listen_keys)
+            snapshooter.create_snap('./hash_', time.time(), self.hash_crud)
             snapshooter.remove_old_snaps()
-            snapshooter.create_snap('./', time.time(), self.listen_keys)
-            snapshooter.create_snap('./', time.time(), self.hash_crud)
 
             time.sleep(int(os.getenv('SNAPSHOT_MILLI')))
 
     def reload_hash(self):
         try:
             names = os.popen('ls -c | grep -m 2 .snap').readlines()
-            self.hash_crud = snapshooter.reload_snap(names[0].replace('\n', ''))
-            print(self.hash_crud)
-            if len(names) > 1:
-                self.listen_keys = snapshooter.reload_snap(names[1].replace('\n', ''))
+
+            if len(names) > 0:
+                for name in names:
+                    if 'listen_' in name:
+                        self.listen_keys = snapshooter.reload_snap(name.replace('\n', ''))
+                    elif 'hash_' in name:
+                        self.hash_crud = snapshooter.reload_snap(name.replace('\n', ''))
+            else:
+                names = os.popen('ls -c ./old_rep/ | grep -m 2 .snap').readlines()
+                if len(names) > 0:
+                    for name in names:
+                        if 'listen_' in name:
+                            self.listen_keys = snapshooter.reload_snap(name.replace('\n', ''))
+                        elif 'hash_' in name:
+                            self.hash_crud = snapshooter.reload_snap(name.replace('\n', ''))
 
         except Exception as ex:
             print(ex)

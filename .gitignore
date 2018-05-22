@@ -102,3 +102,7 @@ ENV/
 
 # PyCharm files
 .idea/
+
+# Snapshots
+*.snap
+

@@ -17,10 +17,19 @@ def create_snap(save_path, timestamp, to_save):
     snap.close()
 
 
+def move_snaps():
+    try:
+        os.system('mv *.snap ./old_rep/')
+    except Exception as ex:
+        print(ex)
+
+
 def remove_old_snaps():
     try:
-        os.system('rm *.snap')
-        os.system('rm *.log')
+        if len(os.popen('ls ./old_rep/').readlines()) > 0:
+            os.system('rm ./old_rep/*')
+        if len(os.popen('ls | grep .log').readlines()) > 0:
+            os.system('rm *.log')
         # os.system('rm $(ls -I ' + name + ' | grep .snap)')
     except Exception as ex:
         print(ex)
