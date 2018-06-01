@@ -3,6 +3,7 @@ import queue
 import socket
 import threading
 import time
+import ast
 
 import dotenv
 import server_grpc
@@ -163,6 +164,10 @@ class Server:
                 self.command_in_key(verify_keys, addr)
 
     def socket_send_message(self, message, addr):
+        if isinstance(addr, str):
+            print(str(addr))
+#            addr = ast.literal_eval(str(addr))
+
         print('Sending message: ' + message + '\tto: ' + str(addr))
         message = '\t\t' + message
         message += '\n\n'
@@ -174,7 +179,7 @@ class Server:
             if int(info['key']) == int(key):
                 for addr in self.listen_keys[key]:
                     if addr != who_sent_addr:
-                        self.socket_send_message('(key=' + key + '\tcommand=' + info['command'] + ')', addr)
+                        self.socket_send_message('(key=' + str(key) + '\tcommand=' + str(info['command']) + ')', addr)
 
     def log_command(self):
         if not self.log.empty():
@@ -186,11 +191,10 @@ class Server:
     def backup_hash(self):
         while True:
             snapshooter.move_snaps()
-            snapshooter.create_snap('./listen_', time.time(), self.listen_keys)
-            snapshooter.create_snap('./hash_', time.time(), self.hash_crud)
-            snapshooter.remove_old_snaps()
+            snapshooter.create_snap('./listen_', time.time(), self.listen_keys, '.snap')
+            snapshooter.create_snap('./hash_', time.time(), self.hash_crud, '.snap')
 
-            time.sleep(int(os.getenv('SNAPSHOT_MILLI')))
+            time.sleep(int(os.getenv('SNAPSHOT_SEC')))
 
     def reload_hash(self):
         try:
@@ -202,7 +206,8 @@ class Server:
                         self.listen_keys = snapshooter.reload_snap(name.replace('\n', ''))
                     elif 'hash_' in name:
                         self.hash_crud = snapshooter.reload_snap(name.replace('\n', ''))
-            else:
+
+            if self.listen_keys is None or self.hash_crud is None:
                 names = os.popen('ls -c ./old_rep/ | grep -m 2 .snap').readlines()
                 if len(names) > 0:
                     for name in names:

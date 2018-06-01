@@ -105,4 +105,4 @@ ENV/
 
 # Snapshots
 *.snap
-
+*.struct

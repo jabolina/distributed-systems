@@ -1,25 +1,34 @@
+import ast
 import os
+import queue
+import socket
 
 
-def create_snap(save_path, timestamp, to_save):
-    name = save_path + str(timestamp) + '.snap'
+def create_snap(save_path, timestamp, to_save, ext):
+    name = save_path + str(timestamp) + ext
     snap = open(name, 'w')
     for key in to_save.keys():
-        if isinstance(to_save[key], type([])):
-            snap.write(str(key))
-            for val in to_save[key]:
-                snap.write('${&*&}$' + str(val))
-            snap.write('\n')
-        else:
-            snap.write(str(key) + '${&*&}$' + str(to_save[key]).replace('\n', '') + '\n')
+        snap.write(str(key) + '${&*&}$' + str(to_save[key]) + '\n')
 
     snap.write('END_OF_FILE')
+    remove_old_snaps()
     snap.close()
 
 
 def move_snaps():
     try:
-        os.system('mv *.snap ./old_rep/')
+        if len(os.popen('ls -H *.snap').readlines()) > 0:
+            os.system('mv *.snap ./old_rep/')
+    except Exception as ex:
+        print(ex)
+
+
+def move_structures():
+    try:
+        if len(os.popen('ls | grep dir_struct').readlines()) == 0:
+            os.system('mkdir dir_struct')
+
+        os.system('mv *.struct dir_struct')
     except Exception as ex:
         print(ex)
 
@@ -41,24 +50,65 @@ def reload_snap(name):
         result = {}
         for line in snap:
             if 'END_OF_FILE' in line:
+                snap.close()
                 return result
 
             line = line.split('${&*&}$')
 
-            if len(line) > 2:
-                key = int(line[0])
-                values = line[1:]
-                result[key] = []
-
-                for value in values:
-                    key = int(key)
-                    result[key].append(value)
-            elif len(line) == 2:
-                result[int(line[0])] = line[1]
+            if len(line) == 2:
+                try:
+                    result[int(line[0])] = ast.literal_eval(line[1])
+                except Exception:
+                    result[int(line[0])] = line[1].replace('\n', '')
 
         snap.close()
         print('Snapshot ' + name + ' was not complete!')
-        return {}
+        return None
+    except Exception as ex:
+        print(ex)
+        exit(0)
+
+
+def save_structs(save_path, timestamp, to_save, ext):
+    name = save_path + str(timestamp) + ext
+    snap = open(name, 'w')
+
+    for key in to_save.keys():
+        snap.write(str(key) + '\n')
+
+    snap.write('END_OF_FILE')
+    snap.close()
+
+
+def remove_old_structs():
+    try:
+        if len(os.popen('ls | grep dir_struct').readlines()) > 0:
+            if len(os.popen('ls ./dir_struct/').readlines()) > 0:
+                os.system('rm ./dir_struct/*')
+    except Exception as ex:
+        print(ex)
+
+
+def retrieve_structs(name):
+    try:
+        snap = open(name, 'r')
+        result = {}
+        pid_list = []
+        for line in snap:
+            if 'END_OF_FILE' in line:
+                snap.close()
+                return result, pid_list
+
+            pid_list.append(int(line))
+            result[int(line)] = {
+                'commands': queue.Queue(),
+                'sock': socket.socket(socket.AF_INET, socket.SOCK_DGRAM),
+                'response': queue.Queue()
+            }
+
+        snap.close()
+        print('Snapshot ' + name + ' was not complete!')
+        return None
     except Exception as ex:
         print(ex)
         exit(0)
