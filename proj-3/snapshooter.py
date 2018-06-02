@@ -74,7 +74,8 @@ def save_structs(save_path, timestamp, to_save, ext):
     snap = open(name, 'w')
 
     for key in to_save.keys():
-        snap.write(str(key) + '\n')
+        print()
+        snap.write(str(key) + '${&*&}$' + str(to_save[key]['sock'].getsockname()[1]) + '\n')
 
     snap.write('END_OF_FILE')
     snap.close()
@@ -93,14 +94,15 @@ def retrieve_structs(name):
     try:
         snap = open(name, 'r')
         result = {}
-        pid_list = []
+        sock_by_old_pid = []
         for line in snap:
             if 'END_OF_FILE' in line:
                 snap.close()
-                return result, pid_list
+                return result, sock_by_old_pid
 
-            pid_list.append(int(line))
-            result[int(line)] = {
+            line = line.split('${&*&}$')
+            sock_by_old_pid.append((int(line[0]), int(line[1])))
+            result[int(line[0])] = {
                 'commands': queue.Queue(),
                 'sock': socket.socket(socket.AF_INET, socket.SOCK_DGRAM),
                 'response': queue.Queue()
@@ -108,7 +110,7 @@ def retrieve_structs(name):
 
         snap.close()
         print('Snapshot ' + name + ' was not complete!')
-        return None
+        return None, None
     except Exception as ex:
         print(ex)
         exit(0)

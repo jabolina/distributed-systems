@@ -142,6 +142,19 @@ class Server:
                 else:
                     send_bytes = 'Key not found for read.'
 
+            elif data.split()[0] == 'SOCK':
+                old_sock = int(data.split()[1])
+
+                for key in self.listen_keys.keys():
+                    sock_list = self.listen_keys[key]
+                    for listening in sock_list:
+                        if isinstance(listening, str):
+                            listening = ast.literal_eval(listening)
+
+                        if int(listening[1]) == old_sock:
+                            self.listen_keys[key].remove(listening)
+                            self.listen_keys[key].append(addr)
+
             elif data.split()[0] == 'LISTEN':
                 key = data.split()[1]
                 if int(key) in self.hash_crud:
@@ -165,8 +178,7 @@ class Server:
 
     def socket_send_message(self, message, addr):
         if isinstance(addr, str):
-            print(str(addr))
-#            addr = ast.literal_eval(str(addr))
+            addr = ast.literal_eval(str(addr))
 
         print('Sending message: ' + message + '\tto: ' + str(addr))
         message = '\t\t' + message

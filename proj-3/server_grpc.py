@@ -88,6 +88,7 @@ class ServerGRPC(configuration_pb2_grpc.ServerGRPCServicer):
                     shared_queues, pid_list = snapshooter.retrieve_structs('dir_struct/' + name[0].replace('\n', ''))
 
             self.create_send_receive_threads(pid_list)
+            self.substitute_sockets(pid_list)
 
             server = threading.Thread(name='server_grpc', target=self.start_server)
             server.start()
@@ -97,9 +98,14 @@ class ServerGRPC(configuration_pb2_grpc.ServerGRPCServicer):
         except KeyboardInterrupt:
             exit(0)
 
+    @staticmethod
+    def substitute_sockets(pid_list):
+        for pid, sock_port in pid_list:
+            shared_queues[pid]['commands'].put('SOCK ' + str(sock_port))
+
     def create_send_receive_threads(self, pid_list, command=None):
 
-        for pid in pid_list:
+        for pid, sock_port in pid_list:
             commands_object = shared_queues[pid]
 
             if command is not None:
@@ -130,7 +136,7 @@ class ServerGRPC(configuration_pb2_grpc.ServerGRPCServicer):
             shared_queues[command.pid] = {'commands': queue.Queue(),
                                           'sock': self.create_socket(),
                                           'response': queue.Queue()}
-            self.create_send_receive_threads([command.pid], command.command)
+            self.create_send_receive_threads([(command.pid, None)], command.command)
         lock.release()
 
         return configuration_pb2.listenKeyReply()
