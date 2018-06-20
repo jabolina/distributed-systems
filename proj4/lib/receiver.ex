@@ -20,7 +20,9 @@ defmodule Receiver do
             IO.puts "Connected in RabbitMQ."
 
             Queue.declare channel, @queue, durable: true
-            {:ok, _consumer_tag} = Basic.consume channel, @queue
+            Basic.consume channel, @queue
+
+            wait_for_messages channel
           {:error, error} ->
             IO.puts "An error occurred while opening channel\n #{error}"
         end
@@ -29,33 +31,29 @@ defmodule Receiver do
     end
   end
 
-  def handle_info({:basic_consume_ok, _}, chan) do
-    {:noreply, chan}
-  end
+  defp wait_for_messages(channel) do
+    receive do
+      {:basic_deliver, payload, meta} ->
+        spawn fn -> consume channel, meta.delivery_tag, meta.redelivered, payload end
 
-  def handle_info({:basic_cancel, _}, chan) do
-    {:stop, :normal, chan}
-  end
-
-  def handle_info({:basic_cancel_ok, _}, chan) do
-    {:noreply, chan}
-  end
-
-  def handle_info({:basic_deliver, payload, meta}, chan) do
-    spawn fn -> consume(chan, meta.delivery_tag, meta.redelivered, payload) end
-    {:noreply, chan}
+        wait_for_messages channel
+    end
   end
 
   defp consume(channel, tag, redelivered, payload) do
     IO.puts "Received message: #{payload}"
-
-    try do
-      Basic.ack channel, tag
-    rescue
-      _ ->
-        :ok = Basic.reject channel, tag, not redelivered
-        IO.puts "Exception in ACK"
+    case redelivered do
+      false ->
+        try do
+          Basic.ack channel, tag
+        rescue
+          _ -> Basic.nack channel, tag, requeue: false
+        end
+      true ->
+        Basic.reject channel, tag, requeue: false
+        IO.puts "Rejected message"
     end
+    {:ok, channel}
   end
 
 end

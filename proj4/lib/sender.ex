@@ -21,7 +21,7 @@ defmodule Sender do
 
             AMQP.Queue.declare channel, @queue, durable: true
 
-            send_message(channel)
+            send_message channel
           {:error, error} ->
             IO.puts "An error occurred while opening channel\n #{error}"
         end
@@ -31,12 +31,12 @@ defmodule Sender do
   end
 
   defp send_message(channel) do
-    case IO.gets ">: " do
+    case IO.gets "> " do
       "exit" ->
         publish_message({:exit, channel})
       message ->
         publish_message({message, channel})
-        send_message(channel)
+        send_message channel
     end
   end
 
