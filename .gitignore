@@ -130,3 +130,9 @@ erl_crash.dump
 
 deps/
 test/
+
+bin/
+obj/
+*.cbp
+*.depend
+*.layout
